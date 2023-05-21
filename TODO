@@ -1,0 +1,9 @@
+TODO :
++ Finir l'importation des données des exportations : GOOD
++ Génération d'une base à la journée avec un filtre selon la journée
++ Sur la base de la journée, colorer les cases où il y a des retards
++ Générer un diagramme camembert avec les motifs de retard
++ Peaufiner le design : GOOD
+
+DEMAIN :
++ Génération d'une base sur deux dates
