@@ -35,7 +35,7 @@ const Dashboard = () => {
 
     useEffect(() => {
        const fetchData = async () => {
-           const result = await axios.get('http://localhost:3001/api/train/generate/day', {
+           const result = await axios.get(`${import.meta.env.VITE_API_HOST}/train/generate/day`, {
                 params: {
                     date: '31/03/2023'
                 }
@@ -52,7 +52,7 @@ const Dashboard = () => {
             { year: 'numeric', month: '2-digit', day: '2-digit' }
         )
 
-        const result = await axios.get('http://localhost:3001/api/train/generate/day', {
+        const result = await axios.get(`${import.meta.env.VITE_API_HOST}/train/generate/day`, {
             params: {
                 date: dateFormat
             }
@@ -81,7 +81,7 @@ const Dashboard = () => {
             return message.error('Veuillez sélectionner une période');
         }
 
-        const result = await axios.get('http://localhost:3001/api/train/monthly/stats', {
+        const result = await axios.get(`${import.meta.env.VITE_API_HOST}/train/monthly/stats`, {
             params: {
                 start_date: dates[0],
                 end_date: dates[1]

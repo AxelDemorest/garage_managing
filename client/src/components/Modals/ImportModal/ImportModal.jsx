@@ -64,7 +64,7 @@ const ImportModal = ({ isShowModal, setIsShowModal }) => {
         formData.append('file1', values.file1.file);
         formData.append('file2', values.file2.file);
 
-        axios.post(`http://localhost:3001/api/train/?date=${date}`, formData)
+        axios.post(`${import.meta.env.VITE_API_HOST}/train/?date=${date}`, formData)
             .then(response => {
                 console.log('Fichiers téléchargés avec succès');
                 message.success('Les fichiers ont été téléchargés avec succès');

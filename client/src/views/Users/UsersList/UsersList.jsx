@@ -25,7 +25,7 @@ const UsersList = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const result = await axios.get('http://localhost:3001/api/users/');
+            const result = await axios.get(`${import.meta.env.VITE_API_HOST}/users/`);
             setData(result.data.map((user) =>{
                 return {
                     cp: user.cp,
@@ -52,7 +52,7 @@ const UsersList = () => {
         e.preventDefault();
 
         try {
-            await axios.post('http://localhost:3001/api/users/', form);
+            await axios.post(`${import.meta.env.VITE_API_HOST}/users/`, form);
             message.success('Utilisateur créé avec succès !');
         } catch (error) {
             console.error(error);

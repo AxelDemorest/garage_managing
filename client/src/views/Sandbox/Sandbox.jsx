@@ -12,7 +12,7 @@ const Sandbox = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const result = await axios.get('http://localhost:3001/api/train/');
+            const result = await axios.get(`${import.meta.env.VITE_API_HOST}/train/`);
             setData(result.data);
         }
 

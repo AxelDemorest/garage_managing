@@ -38,7 +38,7 @@ const Modal = ({ setIsShowModal, isShowModal, tableData }) => {
 
     const exportToExcel = async () => {
         try {
-            const response = await axios.post('http://localhost:3001/api/excel/export', {
+            const response = await axios.post(`${import.meta.env.VITE_API_HOST}/excel/export`, {
                 tableData: JSON.stringify(filteredData),
             }, {
                 responseType: 'blob',
