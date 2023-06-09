@@ -17,8 +17,8 @@ const ChangePassword = () => {
         const userId = decodedToken.sub;
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_HOST}/users/${userId}/change-password`, { token, password });
-            const userResponse = await axios.post(`${import.meta.env.VITE_API_HOST}/auth/login`, { mail: decodedToken.email, password: password });
+            await axios.post(`${import.meta.env.VITE_API_HOST}/api/users/${userId}/change-password`, { token, password });
+            const userResponse = await axios.post(`${import.meta.env.VITE_API_HOST}/api/auth/login`, { mail: decodedToken.email, password: password });
             dispatch({ type: 'LOGIN_SUCCESS', payload: userResponse?.data?.access_token });
             navigate("/");
         } catch (err) {
