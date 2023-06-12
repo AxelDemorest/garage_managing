@@ -19,7 +19,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_HOST}/auth/login`, values);
+            const response = await axios.post(`${import.meta.env.VITE_API_HOST}/api/auth/login`, values);
             const user = jwt_decode(response?.data?.access_token);
 
             if (!user.confirmed) {
