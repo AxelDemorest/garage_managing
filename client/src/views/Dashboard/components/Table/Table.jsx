@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
+import { Tooltip } from 'antd';
 import Pagination from 'react-js-pagination';
 
 const Table = ({ data, itemsPerPage }) => {
@@ -25,20 +26,20 @@ const Table = ({ data, itemsPerPage }) => {
         { name: 'Ré-Ut.' },
         { name: 'Retard Ré-Ut.' },
         { name: 'Temps sous gare' },
+        { name: 'H. Nettoyage Début Théorique' },
+        { name: 'H. Nettoyage Début Réelle' },
+        { name: 'H. Nettoyage Fin Théorique' },
+        { name: 'H. Nettoyage Fin Réelle' },
+        { name: 'H. Désarmement Début Théorique' },
+        { name: 'H. Désarmement Début Réelle' },
+        { name: 'H. Désarmement Fin Théorique' },
+        { name: 'H. Désarmement Fin Réelle' },
         { name: 'H. VAE Début Théorique' },
         { name: 'H. VAE Début Réelle' },
         { name: 'H. VAE Fin Théorique' },
         { name: 'H. VAE Fin Réelle' },
         { name: 'H. CRML/CRLO Fin Théorique' },
         { name: 'H. CRML/CRLO Fin Réelle' },
-        { name: 'H. Désarmement Début Théorique' },
-        { name: 'H. Désarmement Début Réelle' },
-        { name: 'H. Désarmement Fin Théorique' },
-        { name: 'H. Désarmement Fin Réelle' },
-        { name: 'H. Nettoyage Début Théorique' },
-        { name: 'H. Nettoyage Début Réelle' },
-        { name: 'H. Nettoyage Fin Théorique' },
-        { name: 'H. Nettoyage Fin Réelle' },
     ]
 
     function convertHourInMinutes(heure) {
@@ -63,29 +64,73 @@ const Table = ({ data, itemsPerPage }) => {
                         <td>{item.numero_train}</td>
                         <td>{item.origine}</td>
                         <td>{item.destination}</td>
-                        <td>{item.arrive}</td>
+                        <td>
+                            { item.delayCause?.includes('ARR') ? (
+                                <Tooltip placement="top" title={"Retard de l'arrivée commerciale"}>
+                                    <CauseButton delayCause={'ARR'}>{item.arrive}</CauseButton>
+                                </Tooltip>
+                            ) : item.arrive
+                            }
+                        </td>
                         <td>{item.depart}</td>
                         <td>{item.retard_garage}</td>
                         <td>{item.voie}</td>
                         <td>{item.re_ut}</td>
-                        <td>{item.retard_re_ut}</td>
                         <td>
-                            <Button value={convertHourInMinutes(item.temps_sous_gare)}>{item.temps_sous_gare}</Button>
+                            { item.delayCause?.includes('ARR') ? (
+                                <Tooltip placement="top" title={"Retard de l'arrivée commerciale"}>
+                                    <CauseButton delayCause={'ARR'}>{item.retard_re_ut}</CauseButton>
+                                </Tooltip>
+                            ) : item.retard_re_ut
+                            }
+                        </td>
+                        <td>
+                            <Tooltip placement="top" title={"TSG supérieur à 35 minutes"}>
+                                <Button value={convertHourInMinutes(item.temps_sous_gare)}>{item.temps_sous_gare}</Button>
+                            </Tooltip>
+                        </td>
+                        <td>{item.nettoyage_heure_debut_theorique}</td>
+                        <td>{item.nettoyage_heure_debut_reelle}</td>
+                        <td>{item.nettoyage_heure_fin_theorique}</td>
+                        <td>
+                            { item.delayCause?.includes('NETT') ? (
+                                <Tooltip placement="top" title={"Retard fin nettoyage (>25min)"}>
+                                    <CauseButton delayCause={'NETT'}>{item.nettoyage_heure_fin_reelle}</CauseButton>
+                                </Tooltip>
+                                ) : item.nettoyage_heure_fin_reelle
+                            }
+                        </td>
+                        <td>{item.armement_heure_debut_theorique}</td>
+                        <td>{item.armement_heure_debut_reelle}</td>
+                        <td>{item.armement_heure_fin_theorique}</td>
+                        <td>
+                            { item.delayCause?.includes('ARM') ? (
+                                <Tooltip placement="top" title={"Retard fin désarmement (>25min)"}>
+                                    <CauseButton delayCause={'ARM'}>{item.armement_heure_fin_reelle}</CauseButton>
+                                </Tooltip>
+                            ) : item.armement_heure_fin_reelle
+                            }
                         </td>
                         <td>{item.vae_heure_debut_theorique}</td>
                         <td>{item.vae_heure_debut_reelle}</td>
                         <td>{item.vae_heure_fin_theorique}</td>
-                        <td>{item.vae_heure_fin_reelle}</td>
+                        <td>
+                            { item.delayCause?.includes('VAE') ? (
+                                <Tooltip placement="top" title={"Retard fin VAE (>35min)"}>
+                                    <CauseButton delayCause={'VAE'}>{item.vae_heure_fin_reelle}</CauseButton>
+                                </Tooltip>
+                            ) : item.vae_heure_fin_reelle
+                            }
+                        </td>
                         <td>{item.crml_heure_fin_theorique}</td>
-                        <td>{item.crml_heure_fin_reelle}</td>
-                        <td>{item.armement_heure_debut_theorique}</td>
-                        <td>{item.armement_heure_debut_reelle}</td>
-                        <td>{item.armement_heure_fin_theorique}</td>
-                        <td>{item.armement_heure_fin_reelle}</td>
-                        <td>{item.nettoyage_heure_debut_theorique}</td>
-                        <td>{item.nettoyage_heure_debut_reelle}</td>
-                        <td>{item.nettoyage_heure_fin_theorique}</td>
-                        <td>{item.nettoyage_heure_fin_reelle}</td>
+                        <td>
+                            { item.delayCause?.includes('CRML') ? (
+                                <Tooltip placement="top" title={"Retard présence CRML (>30min)"}>
+                                    <CauseButton delayCause={'CRML'}>{item.crml_heure_fin_reelle}</CauseButton>
+                                </Tooltip>
+                            ) : item.crml_heure_fin_reelle
+                            }
+                        </td>
                     </tr>
                 ))}
                 </tbody>
@@ -152,6 +197,25 @@ const Button = styled.button`
   &:hover {
     transform: scale(1.1);
   }
+`;
+
+const CauseButton = styled(Button)`
+  background-color: ${props => {
+    switch (props.delayCause) {
+      case 'NETT':
+        return '#b6e0db';
+      case 'ARM':
+        return '#edcdef';
+      case 'VAE':
+        return '#c2e5c0';
+      case 'CRML':
+        return '#efd1d1';
+      case 'ARR':
+        return '#dedbf1';
+      default:
+        return 'none';
+    }
+  }};
 `;
 
 const PaginationWrapper = styled.div`

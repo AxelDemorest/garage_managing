@@ -29,7 +29,7 @@ export class TrainService {
             return `${newHours}:${newMinutes}`;
         }
 
-        function calculateTimeDifferenceAndPercentage(train: any, timeKey: string, limits: number[], counts: number[], errorTime: number): [number[], number] {
+        function calculateTimeDifferenceAndPercentage(train: any, timeKey: string, limits: number[], counts: number[]): number[] {
             if (train[timeKey] && train.arrive) {
                 const arrivePlusRetard = addMinutesToTime(train.arrive, train.retard_re_ut);
                 const heureFinReelle = train[timeKey].slice(11, 16);
@@ -40,12 +40,15 @@ export class TrainService {
                         counts[i]++;
                     }
                 }
-
-                if (timeDifference > limits[1]) {
-                    errorTime++;
-                }
             }
-            return [counts, errorTime];
+            return counts;
+        }
+
+        function checkTime(train, timeKey, arrivePlusRetard, limit, countsError) {
+            if ((train[timeKey] && train[timeKey] !== '0') && (convertirHeuresEnMinutes(train[timeKey].slice(11, 16)) - convertirHeuresEnMinutes(arrivePlusRetard)) > limit) {
+                countsError++;
+            }
+            return countsError;
         }
 
         const totalTrains = trains.length;
@@ -70,26 +73,63 @@ export class TrainService {
         let countsErrorRA = 0;
 
         for (const train of trains) {
-            [countsVAE, countsErrorVAE] = calculateTimeDifferenceAndPercentage(train, 'vae_heure_fin_reelle', countVAELimits, countsVAE, countsErrorVAE);
-            [countsCRML, countsErrorCRML] = calculateTimeDifferenceAndPercentage(train, 'crml_heure_fin_reelle', countCRMLLimits, countsCRML, countsErrorCRML);
-            [countsARM, countsErrorARM] = calculateTimeDifferenceAndPercentage(train, 'armement_heure_fin_reelle', countARMLimits, countsARM, countsErrorARM);
-            [countsNETT, countsErrorNETT] = calculateTimeDifferenceAndPercentage(train, 'nettoyage_heure_fin_reelle', countNETTLimits, countsNETT, countsErrorNETT);
+            countsVAE = calculateTimeDifferenceAndPercentage(train, 'vae_heure_fin_reelle', countVAELimits, countsVAE);
+            countsCRML = calculateTimeDifferenceAndPercentage(train, 'crml_heure_fin_reelle', countCRMLLimits, countsCRML);
+            countsARM = calculateTimeDifferenceAndPercentage(train, 'armement_heure_fin_reelle', countARMLimits, countsARM);
+            countsNETT = calculateTimeDifferenceAndPercentage(train, 'nettoyage_heure_fin_reelle', countNETTLimits, countsNETT);
             const tempsSousGare = convertirHeuresEnMinutes(train.temps_sous_gare);
 
-            for (let i = 0; i < countLimits.length; i++) {
-                if (tempsSousGare <= countLimits[i]) {
-                    counts[i]++;
-                }
-            }
+            counts = countLimits.map((limit, index) => tempsSousGare <= limit ? ++counts[index] : counts[index]);
+            countsRA = countRALimits.map((limit, index) => parseInt(train.retard_re_ut) <= limit ? ++countsRA[index] : counts[index]);
 
-            for (let i = 0; i < countRALimits.length; i++) {
-                if (train.retard_re_ut <= countRALimits[i]) {
-                    countsRA[i]++;
-                }
-            }
+            const arrivePlusRetard = addMinutesToTime(train.arrive, train.retard_re_ut);
+            train.delayCause = [];
 
-            if (train.retard_re_ut > countRALimits[1]) {
+            if (parseInt(train.retard_re_ut) > countRALimits[1]) {
                 countsErrorRA++;
+                train.delayCause.push('ARR');
+                continue;
+            }
+
+            if (train['nettoyage_heure_fin_reelle']?.length > 1 || train['armement_heure_fin_reelle']?.length > 1) {
+                if (train['nettoyage_heure_fin_reelle']?.length > 1) {
+                    let oldCountNETT = countsErrorNETT;
+                    countsErrorNETT = checkTime(train, 'nettoyage_heure_fin_reelle', arrivePlusRetard, countNETTLimits[1], countsErrorNETT);
+
+                    if (countsErrorNETT > oldCountNETT) {
+                        train.delayCause.push('NETT');
+                        continue;
+                    }
+                }
+
+                if (train['armement_heure_fin_reelle']?.length > 1) {
+                    let oldCountARM = countsErrorARM;
+                    countsErrorARM = checkTime(train, 'armement_heure_fin_reelle', arrivePlusRetard, countARMLimits[1], countsErrorARM);
+
+                    if (countsErrorARM > oldCountARM) {
+                        train.delayCause.push('ARM');
+                        continue;
+                    }
+                }
+            }
+
+            if (train['vae_heure_fin_reelle']?.length > 1) {
+                let oldCountVAE = countsErrorVAE;
+                countsErrorVAE = checkTime(train, 'vae_heure_fin_reelle', arrivePlusRetard, countVAELimits[1], countsErrorVAE);
+
+                if (countsErrorVAE > oldCountVAE) {
+                    train.delayCause.push('VAE');
+                    continue;
+                }
+            }
+
+            if (train['crml_heure_fin_reelle']?.length > 1) {
+                let oldCountCRML = countsErrorCRML;
+                countsErrorCRML = checkTime(train, 'crml_heure_fin_reelle', arrivePlusRetard, countCRMLLimits[1], countsErrorCRML);
+
+                if (countsErrorCRML > oldCountCRML) {
+                    train.delayCause.push('CRML');
+                }
             }
         }
 
@@ -132,10 +172,14 @@ export class TrainService {
     async create(files, date) {
         const {file1, file2} = files;
 
-        const calculateTempsSousGare = (time1, time2) => {
+        const calculateTempsSousGare = (depart_garage, arrive_re_ut, retard_re_ut, retard_garage) => {
             // Parse the input strings into Date objects
-            const date1 = new Date(`2023-01-01T${time1}:00`);
-            const date2 = new Date(`2023-01-01T${time2}:00`);
+            let date1 = new Date(`2023-01-01T${depart_garage}:00`);
+            let date2 = new Date(`2023-01-01T${arrive_re_ut}:00`);
+
+            // Add the delay to the garage departure and the real ut arrival
+            date1.setMinutes(date1.getMinutes() + parseInt(retard_garage));
+            date2.setMinutes(date2.getMinutes() + parseInt(retard_re_ut));
 
             // Calculate the absolute difference in milliseconds
             let diffMs = Math.abs(date2.getTime() - date1.getTime());
@@ -233,7 +277,7 @@ export class TrainService {
                         composition: trainData[9],
                         re_ut: trainData[8],
                         retard_re_ut: trainData[16],
-                        temps_sous_gare: calculateTempsSousGare(trainData[5], trainData[13]),
+                        temps_sous_gare: calculateTempsSousGare(trainData[5], trainData[13], trainData[16], trainData[6].toString()),
                         vae_heure_debut_theorique: '0',
                         vae_heure_debut_reelle: '0',
                         vae_heure_fin_theorique: '0',
